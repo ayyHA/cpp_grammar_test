@@ -110,6 +110,33 @@ template <typename T> struct S3 {
   decltype(func3<T>(declval<T>())) value_;
 };
 
+/*==================== EXAMPLE 4 add_l/rvalue_reference ====================*/
+/*
+  Some data type like "void",don't have void&,so we need use SFINAE to choose
+  which type is legal, reference or itself. Also when we use like "char",both
+  function are legal,through partial order rule,we will choose the better
+  one.Because we use "...", an old c-style variadic parameter in another
+  parameter list, it's less suitable than the other.
+  More about "..." detail info can see "cstdarg"
+*/
+template <typename T> type_identity<T &> try_add_lvalue_reference(int);
+template <typename T> type_identity<T> try_add_lvalue_reference(...);
+
+template <typename T> type_identity<T &&> try_add_rvalue_reference(int);
+template <typename T> type_identity<T> try_add_rvalue_reference(...);
+
+template <typename T>
+struct add_lvalue_reference : decltype(try_add_lvalue_reference<T>(0)) {};
+
+template <typename T>
+struct add_rvalue_reference : decltype(try_add_rvalue_reference<T>(0)) {};
+
+template <typename T>
+using add_lvalue_reference_t = typename add_lvalue_reference<T>::type;
+
+template <typename T>
+using add_rvalue_reference_t = typename add_rvalue_reference<T>::type;
+
 int main() {
   /* =========== EXAMPLE 1 enable_if =========== */
   std::cout << "enable_if: " << std ::endl;
@@ -126,5 +153,11 @@ int main() {
   std::cout << "declval: " << std::endl;
   std::cout << is_same_v<decltype(S3<int>().value_), int> << std::endl;
   std::cout << is_same_v<decltype(S3<float>().value_), float> << std::endl;
+
+  /* =========== EXAMPLE 4 add_l/rvalue_reference =========== */
+  std::cout << "add_l/rvalue_reference: " << std::endl;
+  std::cout << is_same_v<int &, add_lvalue_reference_t<int>> << std::endl;
+  std::cout << is_same_v<void, add_rvalue_reference_t<void>> << std::endl;
+  std::cout << is_same_v<float &&, add_rvalue_reference_t<float>> << std::endl;
   return 0;
 }
